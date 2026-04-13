@@ -286,6 +286,38 @@ body {
   border-bottom: 2px solid white;
 }
 
+/* back to top button */
+
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  height: 50px;
+  width: 50px;
+  background-color: #1e2024;
+  color: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: var(--pixelify);
+  font-size: 1.5rem;
+  z-index: 500;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.back-to-top.show {
+  opacity: 0.9;
+  visibility: visible;
+}
+
+.back-to-top:hover {
+  background-color: #505050;
+  transform: translateY(-5px);
+  border-color: white;
+  color: white;
+}
+
 /* media queries */
 @media (max-width: 768px) {
   .region-container {

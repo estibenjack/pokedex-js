@@ -1,6 +1,8 @@
 const pokemonGrid = document.getElementById('pokemon-grid');
 const searchBar = document.getElementById('search-bar');
 const regionsContainer = document.querySelector('.regions');
+const footerTxt = document.getElementById('footer-text');
+const bttBtn = document.getElementById('back-to-top');
 
 let currentPokemonList;
 let currentRegionName = 'kanto';
@@ -35,6 +37,24 @@ const regions = [
   { name: 'hisui', start: 899, end: 905 },
   { name: 'paldea', start: 906, end: 1025 }
 ];
+
+const currentYear = new Date().getFullYear();
+footerTxt.innerText += ` ${currentYear}`;
+
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 300) {
+    bttBtn.classList.add('show');
+  } else {
+    bttBtn.classList.remove('show');
+  }
+});
+
+bttBtn.addEventListener('click', () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+});
 
 searchBar.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {

@@ -1,7 +1,9 @@
 const pokemonGrid = document.getElementById('pokemon-grid');
 const searchBar = document.getElementById('search-bar');
+const regionsContainer = document.querySelector('.regions');
 
 let currentPokemonList;
+let currentRegionName = 'kanto';
 
 const typeColours = {
   grass: '#78c850',
@@ -21,7 +23,28 @@ const typeColours = {
   dragon: '#7038f8'
 };
 
+const regions = [
+  { name: 'kanto', start: 1, end: 151 },
+  { name: 'johto', start: 152, end: 251 },
+  { name: 'hoenn', start: 252, end: 386 },
+  { name: 'sinnoh', start: 387, end: 493 },
+  { name: 'unova', start: 494, end: 649 },
+  { name: 'kalos', start: 650, end: 721 },
+  { name: 'alola', start: 722, end: 809 },
+  { name: 'galar', start: 810, end: 898 },
+  { name: 'hisui', start: 899, end: 905 },
+  { name: 'paldea', start: 906, end: 1025 }
+];
+
+searchBar.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+  }
+});
+
 searchBar.addEventListener('input', (e) => {
+  if (!currentPokemonList) return;
+
   const searchString = e.target.value.toLowerCase();
 
   const filteredPokemon = currentPokemonList.filter((pokemon) => {
@@ -35,10 +58,35 @@ searchBar.addEventListener('input', (e) => {
   renderPokemon(filteredPokemon);
 });
 
-const fetchPokemon = async () => {
+regionsContainer.addEventListener('click', (e) => {
+  const regionBtn = e.target.closest('.region');
+  if (!regionBtn) return;
+
+  document.querySelector('.active-filter').classList.remove('active-filter');
+  regionBtn.classList.add('active-filter');
+
+  const regionName = regionBtn.getAttribute('data-region');
+  const selectedRegion = regions.find((r) => r.name === regionName);
+
+  if (selectedRegion) {
+    updateRegionUI(regionName);
+    fetchPokemon(selectedRegion.start, selectedRegion.end);
+  }
+});
+
+const fetchPokemon = async (start, end) => {
+  const fetchStart = start || 1;
+  const fetchEnd = end || 151;
+
+  pokemonGrid.innerHTML = `
+  <div class="loading">
+    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="spinning-pokeball" />
+    <p>Loading Region...</p>
+  </div>
+`;
   const pokemonPromises = [];
 
-  for (let i = 1; i <= 151; i++) {
+  for (let i = fetchStart; i <= fetchEnd; i++) {
     const url = `https://pokeapi.co/api/v2/pokemon/${i}`;
     pokemonPromises.push(fetch(url).then((res) => res.json()));
   }
@@ -66,17 +114,82 @@ const renderPokemon = (pokemonList) => {
     `;
     return;
   }
-  const htmlString = pokemonList
+  const filteredString = pokemonList
     .map((pokemon) => {
-      filteredList += createPokemonCard(pokemon);
+      return createPokemonCard(pokemon);
     })
     .join('');
 
-  pokemonGrid.innerHTML = filteredList;
+  pokemonGrid.innerHTML = filteredString;
 };
 
 const createPokemonCard = (pokemon) => {
-  const name = pokemon.name[0].toUpperCase() + pokemon.name.slice(1);
+  let rawName = pokemon.name;
+  const suffixesToRemove = [
+    '-m',
+    '-male',
+    '-f',
+    '-female',
+    '-shield',
+    '-average',
+    '-midday',
+    '-baile',
+    '-solo',
+    '-disguised',
+    '-incarnate',
+    '-normal',
+    '-aria',
+    '-two-segment',
+    '-curly',
+    '-family-of-four',
+    '-family-of-three',
+    '-green-plumage',
+    '-blue-plumage',
+    '-yellow-plumage',
+    '-white-plumage',
+    '-zero',
+    '-hero',
+    '-full-belly',
+    '-single-strike',
+    '-amped',
+    '-land',
+    '-plant',
+    '-standard',
+    '-red-striped',
+    '-ordinary',
+    '-red-meteor'
+  ];
+
+  const keepHyphen = [
+    'jangmo-o',
+    'hakamo-o',
+    'kommo-o',
+    'ho-oh',
+    'porygon-z',
+    'wo-chien',
+    'chi-yu',
+    'chien-pao',
+    'ting-lu'
+  ];
+
+  if (rawName === 'nidoran-m') rawName = 'nidoran ♂';
+  if (rawName === 'nidoran-f') rawName = 'nidoran ♀';
+
+  suffixesToRemove.forEach((suffix) => {
+    if (rawName.endsWith(suffix)) {
+      rawName = rawName.replace(suffix, '');
+    }
+  });
+
+  let name = rawName
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(keepHyphen.includes(rawName.toLowerCase()) ? '-' : ' ');
+
+  if (name === 'Type Null') {
+    name = 'Type: Null';
+  }
+
   const id = pokemon.id.toString().padStart(3, '0');
   const type = pokemon.types[0].type.name;
   const colour = typeColours[type] || '#777';
@@ -100,4 +213,15 @@ const createPokemonCard = (pokemon) => {
   `;
 };
 
+const updateRegionUI = (regionName) => {
+  currentRegionName = regionName;
+
+  const formattedName =
+    regionName.charAt(0).toUpperCase() + regionName.slice(1);
+  searchBar.placeholder = `Search in ${formattedName}...`;
+
+  searchBar.value = '';
+};
+
+updateRegionUI('kanto');
 fetchPokemon();

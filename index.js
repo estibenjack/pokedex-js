@@ -300,8 +300,8 @@ function openModal(id) {
   const content = document.getElementById('modal-loaded-content');
 
   img.onload = () => {
-    loader.style.display = 'none'; // Hide spinner
-    content.style.display = 'block'; // Show content
+    loader.style.display = 'none';
+    content.style.display = 'block';
 
     setTimeout(() => {
       const fills = modalBody.querySelectorAll('.stat-fill');

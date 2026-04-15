@@ -3,8 +3,11 @@ const searchBar = document.getElementById('search-bar');
 const regionsContainer = document.querySelector('.regions');
 const footerTxt = document.getElementById('footer-text');
 const bttBtn = document.getElementById('back-to-top');
+const modal = document.getElementById('pokemon-modal');
+const modalBody = document.getElementById('modal-body');
 
 let currentPokemonList;
+let allFetchedPokemon;
 let currentRegionName = 'kanto';
 
 const typeColours = {
@@ -62,6 +65,16 @@ searchBar.addEventListener('keydown', (e) => {
   }
 });
 
+document.querySelector('.close-modal').onclick = () => {
+  modal.style.display = 'none';
+};
+
+window.onclick = (e) => {
+  if (e.target == modal) {
+    modal.style.display = 'none';
+  }
+};
+
 searchBar.addEventListener('input', (e) => {
   if (!currentPokemonList) return;
 
@@ -115,6 +128,7 @@ const fetchPokemon = async (start, end) => {
     const allPokemonData = await Promise.all(pokemonPromises);
 
     currentPokemonList = allPokemonData;
+    allFetchedPokemon = allPokemonData;
     renderPokemon(currentPokemonList);
   } catch (err) {
     console.log(`Gotcha catch 'em all... but we caught an error: ${err}`);
@@ -217,7 +231,7 @@ const createPokemonCard = (pokemon) => {
   // const gif = pokemon.sprites['other'].showdown['front_default'];
 
   return `
-    <div class="pokemon-card" style="--type-colour: ${colour}">
+    <div class="pokemon-card" onClick="openModal(${pokemon.id})" style="--type-colour: ${colour}">
       <div class="card-header">
         <span class="number">#${id}</span>
       </div>
@@ -232,6 +246,71 @@ const createPokemonCard = (pokemon) => {
     </div>
   `;
 };
+
+function openModal(id) {
+  const pokemon = allFetchedPokemon.find((p) => p.id === id);
+  if (!pokemon) return;
+
+  const type = pokemon.types[0].type.name;
+  const colour = typeColours[type] || '#777';
+
+  const height = (pokemon.height / 10).toFixed(1);
+  const weight = (pokemon.weight / 10).toFixed(1);
+
+  modalBody.innerHTML = `
+    <div id="modal-loading-state" class="modal-loader">
+      <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" 
+          class="pokeball-spinner" 
+          alt="Loading..." />
+      <p style="font-size: 0.5rem; margin-top: 15px;">Loading...</p>
+    </div>
+
+    <div id="modal-loaded-content" class="modal-loaded-content">
+      <h2 class="modal-name">${pokemon.name.replace(/-/g, ' ').toUpperCase()}</h2>
+      <div class="modal-img-container">
+        <img id="modal-main-img" class="modal-img" src="${pokemon.sprites.other['official-artwork'].front_default}" alt="${pokemon.name}" />
+      </div>
+
+      <div class="modal-info-grid">
+        <p><strong>Height:</strong> ${height}m</p>
+        <p><strong>Weight:</strong> ${weight}kg</p>
+      </div>
+
+      <div class="stats-container">
+        ${pokemon.stats
+          .map(
+            (s) => `
+          <div class="stat-row">
+            <span class="stat-name">${s.stat.name.replace('-', ' ')}</span>
+            <div class="stat-bar">
+              <div class="stat-fill" data-width="${(s.base_stat / 255) * 100}%" style="width: 0%; background-color: ${colour}"></div>
+            </div>
+            <span class="stat-num">${s.base_stat}</span>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+
+  const img = document.getElementById('modal-main-img');
+  const loader = document.getElementById('modal-loading-state');
+  const content = document.getElementById('modal-loaded-content');
+
+  img.onload = () => {
+    loader.style.display = 'none';
+    content.style.display = 'block';
+
+    setTimeout(() => {
+      const fills = modalBody.querySelectorAll('.stat-fill');
+      fills.forEach((fill) => {
+        fill.style.width = fill.getAttribute('data-width');
+      });
+    }, 50);
+  };
+}
 
 const updateRegionUI = (regionName) => {
   currentRegionName = regionName;
